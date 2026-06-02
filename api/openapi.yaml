@@ -1,0 +1,616 @@
+openapi: 3.0.0
+
+info:
+  title: TaskManager API
+  version: 1.0.0
+  description: |
+    API REST para gestion de proyectos y tareas personales.
+
+    ## Autenticacion
+    La mayoria de endpoints requieren un token JWT en la cabecera `Authorization: Bearer <token>`.
+    Obten el token mediante `POST /auth/login`.
+
+    ## Aislamiento por usuario
+    Cada usuario solo puede acceder a sus propios proyectos y tareas. Los intentos de acceso
+    a recursos ajenos devuelven 404 (no se revela su existencia).
+
+  contact:
+    name: Grupo inf25dw2g05
+    email: a048669@umaia.pt
+
+servers:
+  - url: http://localhost:3000
+    description: Servidor de desarrollo local
+
+tags:
+  - name: Auth
+    description: Registro e inicio de sesion
+  - name: Users
+    description: Gestion de usuarios
+  - name: Projects
+    description: Gestion de proyectos del usuario autenticado
+  - name: Tasks
+    description: Gestion de tareas (anidadas bajo proyectos)
+
+# -----------------------------------------------------------------
+# Seguridad por defecto: todos los endpoints requieren bearerAuth
+# salvo que se sobrescriba con `security: []` en endpoints publicos
+# (como /auth/register y /auth/login)
+# -----------------------------------------------------------------
+security:
+  - bearerAuth: []
+
+paths:
+
+  # ===============================================================
+  # AUTH
+  # ===============================================================
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Registrar un nuevo usuario
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Usuario registrado correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Usuario registrado correctamente
+                  userId:
+                    type: integer
+                    example: 31
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Iniciar sesion y obtener token JWT
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login correcto
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Login correcto
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        "401":
+          description: Credenciales invalidas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+
+  # ===============================================================
+  # USERS
+  # ===============================================================
+  /users:
+    get:
+      tags: [Users]
+      summary: Listar todos los usuarios
+      responses:
+        "200":
+          description: Lista de usuarios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /users/me:
+    get:
+      tags: [Users]
+      summary: Obtener el perfil del usuario autenticado
+      responses:
+        "200":
+          description: Datos del usuario autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    put:
+      tags: [Users]
+      summary: Actualizar el perfil del usuario autenticado
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdateRequest"
+      responses:
+        "200":
+          description: Usuario actualizado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    delete:
+      tags: [Users]
+      summary: Eliminar la cuenta del usuario autenticado
+      description: |
+        Elimina la cuenta del usuario. Por la restriccion ON DELETE CASCADE de la BD,
+        tambien se eliminan automaticamente todos sus proyectos y, a su vez, todas las tareas
+        de esos proyectos.
+      responses:
+        "200":
+          description: Usuario eliminado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /users/{id}:
+    get:
+      tags: [Users]
+      summary: Obtener un usuario por id
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Usuario encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ===============================================================
+  # PROJECTS
+  # ===============================================================
+  /projects:
+    get:
+      tags: [Projects]
+      summary: Listar los proyectos del usuario autenticado
+      responses:
+        "200":
+          description: Lista de proyectos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    post:
+      tags: [Projects]
+      summary: Crear un proyecto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectInput"
+      responses:
+        "201":
+          description: Proyecto creado correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Proyecto creado correctamente
+                  projectId:
+                    type: integer
+                    example: 31
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /projects/{id}:
+    parameters:
+      - $ref: "#/components/parameters/IdParam"
+    get:
+      tags: [Projects]
+      summary: Obtener un proyecto por id
+      responses:
+        "200":
+          description: Proyecto encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    put:
+      tags: [Projects]
+      summary: Actualizar un proyecto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectInput"
+      responses:
+        "200":
+          description: Proyecto actualizado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessage"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    delete:
+      tags: [Projects]
+      summary: Eliminar un proyecto
+      description: Por CASCADE se eliminan tambien todas las tareas del proyecto.
+      responses:
+        "200":
+          description: Proyecto eliminado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessage"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ===============================================================
+  # TASKS
+  # ===============================================================
+  /tasks:
+    get:
+      tags: [Tasks]
+      summary: Listar las tareas del usuario autenticado
+      description: Devuelve todas las tareas que pertenecen a proyectos del usuario autenticado.
+      responses:
+        "200":
+          description: Lista de tareas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    post:
+      tags: [Tasks]
+      summary: Crear una tarea
+      description: |
+        Crea una tarea asociada al project_id indicado.
+        Verifica que el proyecto pertenece al usuario autenticado; si no, devuelve 403.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskInput"
+      responses:
+        "201":
+          description: Tarea creada correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Tarea creada correctamente
+                  taskId:
+                    type: integer
+                    example: 31
+        "403":
+          description: El proyecto no pertenece al usuario autenticado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorMessage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /tasks/{id}:
+    parameters:
+      - $ref: "#/components/parameters/IdParam"
+    get:
+      tags: [Tasks]
+      summary: Obtener una tarea por id
+      responses:
+        "200":
+          description: Tarea encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    put:
+      tags: [Tasks]
+      summary: Actualizar una tarea
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskUpdateInput"
+      responses:
+        "200":
+          description: Tarea actualizada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessage"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    delete:
+      tags: [Tasks]
+      summary: Eliminar una tarea
+      responses:
+        "200":
+          description: Tarea eliminada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessage"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+# =================================================================
+# COMPONENTES REUTILIZABLES
+# =================================================================
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token JWT obtenido en `/auth/login`
+
+  parameters:
+    IdParam:
+      name: id
+      in: path
+      required: true
+      description: Identificador numerico del recurso
+      schema:
+        type: integer
+        example: 1
+
+  schemas:
+
+    # -------------- AUTH ----------------
+    RegisterRequest:
+      type: object
+      required: [username, email, password]
+      properties:
+        username:
+          type: string
+          example: nuevo_usuario
+        email:
+          type: string
+          format: email
+          example: nuevo@taskmanager.com
+        password:
+          type: string
+          format: password
+          example: password123
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: demo1@taskmanager.com
+        password:
+          type: string
+          format: password
+          example: demo1234
+
+    # -------------- USER ----------------
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        username:
+          type: string
+          example: demo1
+        email:
+          type: string
+          format: email
+          example: demo1@taskmanager.com
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-05-11T17:40:54.000Z"
+
+    UserUpdateRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          example: demo1_actualizado
+        email:
+          type: string
+          format: email
+          example: demo1@taskmanager.com
+
+    # -------------- PROJECT -------------
+    Project:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Proyecto Personal
+        description:
+          type: string
+          example: Tareas personales del dia a dia
+        user_id:
+          type: integer
+          example: 1
+        created_at:
+          type: string
+          format: date-time
+
+    ProjectInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          example: Mi nuevo proyecto
+        description:
+          type: string
+          example: Descripcion del proyecto
+
+    # -------------- TASK ----------------
+    Task:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: Comprar leche
+        description:
+          type: string
+          example: Ir al supermercado del barrio
+        completed:
+          type: boolean
+          example: false
+        project_id:
+          type: integer
+          example: 1
+        created_at:
+          type: string
+          format: date-time
+
+    TaskInput:
+      type: object
+      required: [title, project_id]
+      properties:
+        title:
+          type: string
+          example: Nueva tarea
+        description:
+          type: string
+          example: Descripcion de la tarea
+        completed:
+          type: boolean
+          example: false
+        project_id:
+          type: integer
+          example: 1
+
+    TaskUpdateInput:
+      type: object
+      properties:
+        title:
+          type: string
+          example: Tarea actualizada
+        description:
+          type: string
+          example: Nueva descripcion
+        completed:
+          type: boolean
+          example: true
+
+    # -------------- RESPUESTAS GENERICAS -------------
+    SuccessMessage:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Operacion realizada correctamente
+
+    ErrorMessage:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Mensaje de error descriptivo
+
+  # ---------------------------------------------------------------
+  # Respuestas reutilizables
+  # ---------------------------------------------------------------
+  responses:
+    Unauthorized:
+      description: Falta el token, esta caducado o no es valido
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorMessage"
+          example:
+            message: Token no proporcionado
+
+    NotFound:
+      description: Recurso no encontrado o sin permisos para acceder a el
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorMessage"
+          example:
+            message: Recurso no encontrado o sin permisos
+
+    ServerError:
+      description: Error interno del servidor
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorMessage"
+          example:
+            message: Error interno del servidor

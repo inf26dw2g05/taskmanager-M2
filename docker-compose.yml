@@ -1,0 +1,55 @@
+services:
+
+  # ---------------------------------------------------------
+  # Servicio de base de datos MySQL
+  # Imagen publicada en Docker Hub: inf25dw2g05/taskmanager-mysql
+  # Es una imagen MySQL 8.0 con el seed (init.sql) precargado.
+  # ---------------------------------------------------------
+  mysql:
+    image: inf25dw2g05/taskmanager-mysql:latest
+    container_name: taskmanager-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - taskmanager-net
+
+  # ---------------------------------------------------------
+  # Servicio de la API Node.js
+  # Imagen publicada en Docker Hub: inf25dw2g05/taskmanager-app
+  # ---------------------------------------------------------
+  app:
+    image: inf25dw2g05/taskmanager-app:latest
+    container_name: taskmanager-app
+    restart: unless-stopped
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "3000:3000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - taskmanager-net
+
+volumes:
+  mysql_data:
+
+networks:
+  taskmanager-net:
+    driver: bridge
