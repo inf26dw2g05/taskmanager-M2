@@ -44,6 +44,49 @@ export async function getProjects() {
   return response.json();
 }
 
+export async function createProject(name, description) {
+  const response = await fetch(API_URL + "/projects", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + getToken()
+    },
+    body: JSON.stringify({
+      name,
+      description
+    })
+  });
+
+  return response.json();
+}
+
+export async function deleteProject(id) {
+  const response = await fetch(API_URL + "/projects/" + id, {
+    method: "DELETE",
+    headers: {
+      Authorization: "Bearer " + getToken()
+    }
+  });
+
+  return response.json();
+}
+
+export async function updateProject(id, name, description) {
+  const response = await fetch(API_URL + "/projects/" + id, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + getToken()
+    },
+    body: JSON.stringify({
+      name,
+      description
+    })
+  });
+
+  return response.json();
+}
+
 export async function getTasks() {
   const response = await fetch(API_URL + "/tasks", {
     headers: {
