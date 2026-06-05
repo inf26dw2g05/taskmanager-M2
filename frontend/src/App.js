@@ -1,14 +1,17 @@
 import { useState } from "react";
-import Login from "./components/Login";
-import { getToken, removeToken } from "./api";
-import "./App.css";
 
+import Login from "./components/Login";
 import Profile from "./components/Profile";
 import Projects from "./components/Projects";
 import Tasks from "./components/Tasks";
 
+import { getToken, removeToken } from "./api";
+
+import "./App.css";
+
 function App() {
   const [logged, setLogged] = useState(getToken() !== null);
+  const [page, setPage] = useState("profile");
 
   function handleLogin() {
     setLogged(true);
@@ -17,6 +20,20 @@ function App() {
   function handleLogout() {
     removeToken();
     setLogged(false);
+  }
+
+  function renderPage() {
+    if (page === "profile") {
+      return <Profile />;
+    }
+
+    if (page === "projects") {
+      return <Projects />;
+    }
+
+    if (page === "tasks") {
+      return <Tasks />;
+    }
   }
 
   if (!logged) {
@@ -31,11 +48,25 @@ function App() {
     <div className="App">
       <h1>TaskManager</h1>
 
-      <Profile />
-      <Projects />
-      <Tasks />
+      <button onClick={() => setPage("profile")}>
+        Profile
+      </button>
 
-      <button onClick={handleLogout}>Logout</button>
+      <button onClick={() => setPage("projects")}>
+        Projects
+      </button>
+
+      <button onClick={() => setPage("tasks")}>
+        Tasks
+      </button>
+
+      <button onClick={handleLogout}>
+        Logout
+      </button>
+
+      <hr />
+
+      {renderPage()}
     </div>
   );
 }
