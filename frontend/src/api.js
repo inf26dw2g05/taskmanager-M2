@@ -96,3 +96,40 @@ export async function getTasks() {
 
   return response.json();
 }
+
+export async function createTask(title, description, completed, project_id) {
+  const response = await fetch(API_URL + "/tasks", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + getToken()
+    },
+    body: JSON.stringify({ title, description, completed, project_id })
+  });
+
+  return response.json();
+}
+
+export async function updateTask(id, title, description, completed) {
+  const response = await fetch(API_URL + "/tasks/" + id, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + getToken()
+    },
+    body: JSON.stringify({ title, description, completed })
+  });
+
+  return response.json();
+}
+
+export async function deleteTask(id) {
+  const response = await fetch(API_URL + "/tasks/" + id, {
+    method: "DELETE",
+    headers: {
+      Authorization: "Bearer " + getToken()
+    }
+  });
+
+  return response.json();
+}

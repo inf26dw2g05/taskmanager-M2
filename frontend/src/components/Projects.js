@@ -110,7 +110,7 @@ async function handleUpdate(event) {
                       </form>
                   ) : (
                       <div>
-                          <strong>{project.name}</strong> - {project.description}
+                          <strong>{project.name}</strong> (ID: {project.id})- {project.description}
 
                           <button onClick={() => startEdit(project)}>
                               Edit
