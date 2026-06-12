@@ -1,36 +1,46 @@
-# TaskManager API
+# TaskManager Web Application
 
-API REST para gestión de proyectos y tareas personales, desarrollada para la asignatura **Desarrollo Web II — M1** (UMAIA, curso 2025/2026).
+API REST para gestión de proyectos y tareas personales, desarrollada para la asignatura **Desarrollo Web II — M2** (UMAIA, curso 2025/2026).
+
+El proyecto reutiliza la API REST desarrollada en M1 y añade una aplicación cliente desarrollada con ReactJS para consumir los recursos ofrecidos por dicha API.
 
 - **Grupo:** `inf25dw2g05`
 - **Equipo:** Marcos Martínez Fernández (A048665), Francisco Capilla Sánchez (A048669)
-- **Repositorio GitHub:** https://github.com/inf25dw2g05/taskmanager
+- **Repositorio GitHub:** https://github.com/inf26dw2g05/taskmanager-M2
 - **Docker Hub:** https://hub.docker.com/u/inf25dw2g05
 
 ## Características principales
 
-- Arquitectura REST con los cuatro verbos HTTP (GET, POST, PUT, DELETE).
-- Tres recursos (`users`, `projects`, `tasks`) con dos relaciones 1:n.
-- Respuestas en JSON.
-- Autenticación y autorización mediante JWT, con hash de contraseñas usando bcrypt.
-- Aislamiento por propietario: cada usuario solo accede a sus propios proyectos y tareas.
-- Log en consola del usuario autenticado en cada petición protegida.
-- Documentación OpenAPI 3.0 servida en `/docs` mediante Swagger UI.
-- Colección Postman lista para importar y probar todos los endpoints.
-- Despliegue multi-contenedor con Docker Compose (MySQL + Node.js).
-- Base de datos preconfigurada con 30 registros por tabla.
+- Frontend desarrollado con ReactJS.
+- Uso de componentes React simples.
+- Uso de `useState` para gestionar estado local.
+- Uso de `useEffect` para cargar datos desde la API.
+- Formularios controlados para login, proyectos y tareas.
+- Comunicación con API REST mediante `fetch`.
+- Autenticación mediante JWT.
+- Almacenamiento del token en `localStorage`.
+- Navegación simple entre Profile, Projects y Tasks.
+- Backend REST reutilizado del trabajo M1.
+- Base de datos MySQL con datos iniciales.
+- Documentación OpenAPI 3.0 servida en `/docs`.
+- Colección Postman para pruebas de la API.
+- Despliegue multi-contenedor con Docker Compose:
+  - MySQL
+  - API Node.js
+  - Frontend React
 
 ## Stack tecnológico
 
 | Capa | Tecnología |
 |---|---|
-| Servidor aplicacional | Node.js 20 (Alpine) |
-| Framework web | Express 5 |
+| Frontend | ReactJS |
+| Cliente HTTP | fetch |
+| Servidor aplicacional | Node.js |
+| Framework backend | Express |
 | Base de datos | MySQL 8.0 |
-| Driver MySQL | mysql2 (con pool) |
-| Autenticación | jsonwebtoken (JWT) |
+| Autenticación | JWT |
 | Hash de contraseñas | bcryptjs |
-| Documentación API | OpenAPI 3.0 + swagger-ui-express |
+| Documentación API | OpenAPI 3.0 + Swagger UI |
 | Contenerización | Docker + Docker Compose |
 
 ## Imágenes en Docker Hub
@@ -75,19 +85,23 @@ El `docker-compose.yml` está configurado para consumir estas imágenes directam
 
 | Servicio | Puerto host | Puerto contenedor |
 |---|---|---|
-| API REST | 3000 | 3000 |
-| MySQL | 3307 | 3306 |
+| Frotend React | 3001 | 3000 |
+| MySQL | 3007 | 3306 |
+| API REST | 3007 | 3006 |
 
 ## Acceso a la API
 
 ### Swagger UI (documentación OpenAPI)
 
-Abrir en el navegador: **http://localhost:3000/docs**
+## API REST
 
-Desde Swagger UI se pueden:
-- Consultar todos los endpoints organizados por tags (Auth, Users, Projects, Tasks).
-- Ver los schemas, ejemplos y códigos de respuesta de cada endpoint.
-- Probar los endpoints directamente (botón **Try it out**), incluyendo los protegidos (botón **Authorize** para introducir el token JWT).
+La API REST desarrollada en M1 continúa disponible en:
+
+http://localhost:3000
+
+La documentación Swagger puede consultarse en:
+
+http://localhost:3000/docs
 
 ### Usuarios de prueba
 
@@ -101,43 +115,37 @@ El seed crea 30 usuarios. Para la demo se destacan tres con credenciales conocid
 
 Cada uno tiene 2 proyectos asociados, con tareas dentro. El resto de usuarios (`alice`, `bob`, `carol`, etc.) usan la misma contraseña.
 
-### Ejemplo de uso (curl / PowerShell)
+## Aplicación Web React
 
-Login:
+La aplicación cliente está disponible en:
 
-```powershell
-$r = Invoke-RestMethod -Method POST -Uri http://localhost:3000/auth/login `
-  -ContentType "application/json" `
-  -Body '{"email":"demo1@taskmanager.com","password":"demo1234"}'
+```text
+http://localhost:3001
 ```
 
-Llamada a un endpoint protegido:
+Tras autenticarse, el usuario puede:
 
-```powershell
-Invoke-RestMethod -Method GET -Uri http://localhost:3000/projects `
-  -Headers @{ "Authorization" = "Bearer $($r.token)" }
-```
+- Consultar su perfil.
+- Gestionar proyectos (crear, editar, eliminar).
+- Gestionar tareas (crear, editar, eliminar).
+- Cerrar sesión.
+
+La navegación se realiza mediante una interfaz React basada en componentes.
 
 ## Colección Postman
 
-En `postman/taskmanager-api.postman_collection.json` se incluye una colección lista para importar:
+La colección utilizada para probar la API se encuentra en la carpeta:
 
-1. Abrir Postman → **Import** → arrastrar el JSON.
-2. Ejecutar **Auth → Login (demo1)**. El token JWT se guarda automáticamente en la variable `{{token}}` de la colección.
-3. Todas las llamadas a `/users`, `/projects` y `/tasks` se ejecutan con el token ya configurado en la cabecera `Authorization: Bearer`.
-4. Para demostrar el aislamiento por usuario, ejecutar **Auth → Login (demo2)** y volver a llamar a los endpoints: los recursos devueltos serán los del segundo usuario, no los del primero.
+postman/
 
 ## Estructura del repositorio
 
-- `api/openapi.yaml` — Especificación OpenAPI 3.0
-- `doc/` — Capítulos del informe (`c1.md` a `c4.md`)
-- `mysql/init.sql` — Esquema + 30 registros por tabla
-- `mysql/Dockerfile` — Dockerfile de la imagen MySQL con seed
-- `postman/taskmanager-api.postman_collection.json` — Colección Postman
-- `src/` — Código fuente de la API (routes, controllers, middlewares, config)
+- `frontend/` — Aplicación React
+- `frontend/src/components/` — Componentes React
+- `frontend/Dockerfile` — Dockerfile del frontend
+- `screenshots/` — Capturas para el informe
 - `Dockerfile` — Dockerfile de la imagen Node
 - `docker-compose.yml` — Orquestación de los dos contenedores
-- `.env.example` — Plantilla de variables de entorno
 
 ## Documentación
 
@@ -158,6 +166,15 @@ El informe completo del proyecto se encuentra en la carpeta `doc/`, dividido en 
 
 ## Notas
 
-- Los datos de MySQL persisten en un volumen Docker llamado `mysql_data`. Para reiniciar la base de datos desde cero, ejecutar `docker compose down -v` (la `-v` borra el volumen).
-- Los tokens JWT tienen una validez de 1 hora.
-- El proyecto está pensado para entorno de desarrollo; en producción habría que cambiar `JWT_SECRET` y `DB_PASSWORD` por valores aleatorios fuertes, restringir CORS, y considerar la migración a OAuth 2.0 con un proveedor externo (ver `doc/c4.md` §4.6).
+La aplicación cliente ha sido desarrollada utilizando ReactJS.
+
+Componentes principales:
+
+- `Login.js`
+- `Profile.js`
+- `Projects.js`
+- `Tasks.js`
+
+La comunicación con la API se realiza mediante peticiones HTTP usando `fetch`.
+
+El token JWT devuelto por la API se almacena en `localStorage` y se envía automáticamente en las peticiones a endpoints protegidos.
