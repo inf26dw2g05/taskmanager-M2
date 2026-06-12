@@ -77,9 +77,9 @@ El `docker-compose.yml` está configurado para consumir estas imágenes directam
    docker compose up
 ```
 
-   Docker descargará las imágenes desde Docker Hub la primera vez (`inf25dw2g05/taskmanager-app` y `inf25dw2g05/taskmanager-mysql`) y arrancará los dos contenedores.
+   Docker descargará las imágenes desde Docker Hub la primera vez (`inf25dw2g05/taskmanager-app`, `inf25dw2g05/taskmanager-mysql` y`inf25dw2g05/frontend`) y arrancará los tres contenedores.
 
-4. Cuando aparezcan los mensajes `Connected to MySQL database` y `app running on localhost:3000`, la API estará lista.
+4. Cuando aparezcan los mensajes `Connected to MySQL database` y `app running on localhost:3001`, la web estará lista.
 
 ### Puertos expuestos
 

@@ -50,8 +50,7 @@ services:
   # Servicio Frontend React
   # ---------------------------------------------------------
   frontend:
-    build:
-      context: ./frontend
+    image: inf25dw2g05/taskmanager-frontend:latest
     container_name: taskmanager-frontend
     restart: unless-stopped
     ports:
